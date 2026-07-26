@@ -1,0 +1,153 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Asisten Koding</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <div id="app">
+      <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+          <a class="navbar-brand" href="#">Asisten Koding</a>
+          <div class="d-flex align-items-center gap-2">
+            <input class="form-control form-control-sm" type="file" id="fileInput" accept=".txt,.docx" style="max-width:260px" />
+            <button class="btn btn-primary btn-sm" id="exportDocx">Export Word</button>
+            <button class="btn btn-danger btn-sm" id="exportPdf">Export PDF</button>
+          </div>
+        </div>
+      </nav>
+
+      <div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3"></div>
+
+      <div class="container-fluid mt-2">
+        <div class="workspace-row">
+
+          <main id="mainPanel">
+            <!-- Document viewer: left gutter (markers) + centered page-like corpus -->
+            <div id="documentViewer" class="doc-viewer">
+              <div class="doc-viewer-scroll" id="docViewerScroll">
+                <div class="doc-page" id="docPage">
+                  <div class="marker-gutter" id="markerGutter" aria-hidden="false"></div>
+                  <div id="chunksContainer" class="">
+                    <div id="introPanel" class="text-muted p-3">
+                      <div class="hero p-5 bg-white border rounded text-center">
+                        <h1 class="hero-title">Mulai Analisis Anda</h1>
+                        <p class="hero-sub">Asisten Koding membantu peneliti melakukan <em>First Cycle Coding</em>, <em>Second Cycle Coding</em>, dan menghasilkan laporan yang siap diekspor ke PDF atau Word.</p>
+                        <div class="hero-email d-flex justify-content-center align-items-center mt-4">
+                          <button id="heroUploadBtn" type="button" class="hero-upload" onclick="document.getElementById('fileInput').click()">Unggah File</button>
+                        </div>
+                        <p class="hero-note small text-muted mt-3">Atau langsung mulai dengan mengunggah transkrip Anda di bar atas.</p>
+                      </div>
+                    </div>
+                    <!-- Corpus container: transcript text and highlights render into #corpus -->
+                    <div id="corpus" class="p-3" style="min-height:200px; white-space:pre-wrap;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+                  <!-- Codeweaving modal -->
+                  <div class="modal fade" id="codeweavingModal" tabindex="-1" aria-labelledby="codeweavingModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title" id="codeweavingModalLabel">Codeweaving — Generated Narrative</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                          <div class="mb-2"><label class="form-label">Codes</label><div id="codeweavingModalCodes" class="mb-2"></div></div>
+                          <div><label class="form-label">Narrative</label><textarea id="codeweavingModalText" class="form-control" rows="6"></textarea></div>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" id="codeweavingSaveSuggested" class="btn btn-outline-secondary">Save as Suggested</button>
+                          <button type="button" id="codeweavingAccept" class="btn btn-primary">Accept</button>
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+          </main>
+
+          <aside id="rightPanel">
+            <button id="expandFirstBtn" class="btn btn-sm btn-outline-secondary ms-2">Expand</button>
+            <div class="panel-header d-flex justify-content-end mb-1"><button id="restoreLayoutBtn" class="btn btn-sm btn-outline-dark" style="display:none">Restore</button></div>
+            <ul class="nav nav-tabs" id="analysisTabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab-mentor" data-bs-toggle="tab" data-bs-target="#pane-mentor" type="button" role="tab">AI Mentor</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-first" data-bs-toggle="tab" data-bs-target="#pane-first" type="button" role="tab">First Cycle</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-second" data-bs-toggle="tab" data-bs-target="#pane-second" type="button" role="tab">Second Cycle</button>
+              </li>
+
+            </ul>
+            <div class="tab-content mt-2">
+              <div class="tab-pane fade show active" id="pane-mentor" role="tabpanel">
+                <div id="aiMentorPanel"></div>
+              </div>
+              <div class="tab-pane fade" id="pane-first" role="tabpanel">
+                <div id="firstCycle"></div>
+              </div>
+              <div class="tab-pane fade" id="pane-second" role="tabpanel">
+                <div id="secondCycle"></div>
+              </div>
+              <!-- memo panel removed from tabs but kept hidden so functionality remains available -->
+            </div>
+            <div id="memoPanel" style="display:none"></div>
+          
+          </aside>
+        </div>
+      </div>
+    </div>
+    <div id="resizer" title="Drag to resize analysis area"></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Memo modal (add only) -->
+    <div class="modal fade" id="memoModal" tabindex="-1" aria-labelledby="memoModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="memoModalLabel">Add Memo</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div id="memoTextRow"><label class="form-label">Memo</label><textarea id="memoModalText" class="form-control" rows="6" placeholder="Write memo..."></textarea></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" id="memoModalSave" class="btn btn-primary">Save Memo</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Code modal (separate) -->
+    <div class="modal fade" id="editCodeModal" tabindex="-1" aria-labelledby="editCodeModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editCodeModalLabel">Edit Code</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-2"><label class="form-label">Code Label</label><input id="editCodeInput" class="form-control form-control-sm"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" id="editCodeDelete" class="btn btn-outline-danger">Delete Occurrence</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" id="editCodeSave" class="btn btn-primary">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="secondCycleManager.js"></script>
+    <script src="codeweavingUI.js"></script>
+    <script src="aiMentor.js"></script>
+    <script src="workspace_ui.js"></script>
+    <script src="firstCycleManager.js"></script>
+    <script src="panels.js"></script>
+  </body>
+</html>

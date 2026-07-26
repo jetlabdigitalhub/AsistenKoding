@@ -1,0 +1,232 @@
+.root{height:100vh;display:flex;flex-direction:column}
+.body{font-family:Segoe UI,Arial,sans-serif;margin:0;padding:0}
+/* UI-wide sizing and uppercase for navigation and controls (corpus text preserved) */
+body{font-family:Segoe UI,Arial,sans-serif;margin:0;padding:0}
+.navbar, .navbar-brand, .navbar-nav, .navbar .btn, .navbar .form-control, .navbar .form-select, .toolbar, .panel h3, .panel .btn, .annotation-item button{ text-transform:uppercase; }
+.navbar, .panel, .toolbar{ font-size:14px }
+/* keep corpus text original casing and comfortable reading size */
+.corpus{ text-transform:none; font-size:15px }
+header{background:#007acc;color:#fff;padding:12px}
+.toolbar{display:flex;gap:8px;padding:10px;background:#f6f6f6;border-bottom:1px solid #e0e0e0}
+.workspace{min-height: calc(100vh - 68px)}
+.container-fluid{padding-left:12px;padding-right:12px}
+/* subtle repeating 50x50 grid background for page canvas */
+.container-fluid.mt-2{
+	background-image: linear-gradient(#ececec 1px, transparent 1px), linear-gradient(90deg, #ececec 1px, transparent 1px);
+	background-size: 50px 50px;
+}
+/* Layout columns */
+#leftSidebar{padding:8px}
+#mainPanel{padding:8px}
+#rightPanel{padding:8px}
+
+/* New workspace flex layout: left sidebar, main 70%, right panel */
+.workspace-row{display:flex;gap:12px}
+#leftSidebar{flex:0 0 12%;max-width:12%;display:none}
+
+/* left sidebar removed: keep rules but hidden by default */
+body.show-left-sidebar #leftSidebar{display:block}
+/* Make main corpus wider: 75% for corpus, 25% for right analysis panel */
+#mainPanel{flex:0 0 75%;max-width:75%}
+#rightPanel{flex:0 0 25%;max-width:25%}
+
+/* Right panel visual: white background and column layout */
+#rightPanel{background:#ffffff;display:flex;flex-direction:column;border-left:1px solid #efefef}
+
+/* Make individual tab panes scrollable with their own scrollers */
+#pane-first, #pane-second{overflow:auto;max-height:calc(100vh - 180px);padding:8px}
+
+/* Ensure the tab-content area grows to fill rightPanel when needed */
+.tab-content{flex:1 1 auto}
+
+/* When right panel is hidden (no-right), expand main area to full width */
+.no-right #rightPanel{display:none}
+.no-right #mainPanel{flex:1 1 100%;max-width:100%}
+
+#resizer{position:fixed;display:none;width:6px;cursor:ew-resize;z-index:10000;background:linear-gradient(90deg, rgba(0,0,0,0.06), rgba(0,0,0,0.02));border-left:1px solid rgba(0,0,0,0.06);border-right:1px solid rgba(255,255,255,0.03);transition:opacity .15s}
+#resizer.hidden{display:none}
+
+/* Expanded analysis styles */
+.analysis-expanded #leftSidebar{display:none}
+.analysis-expanded #mainPanel{flex:0 0 25%;max-width:25%}
+.analysis-expanded #rightPanel{flex:0 0 72%;max-width:72%}
+
+.analysis-expanded.fullscreen-analysis #mainPanel{display:none}
+.analysis-expanded.fullscreen-analysis #leftSidebar{display:none}
+.analysis-expanded.fullscreen-analysis #rightPanel{flex:1 1 100%;max-width:100%}
+
+.fullscreen-analysis #leftSidebar{display:none}
+.fullscreen-analysis #mainPanel{display:none}
+.fullscreen-analysis #rightPanel{flex:1 1 100%;max-width:100%}
+
+/* Larger first-cycle code cards when expanded */
+.analysis-expanded .first-code-item{padding:14px;font-size:16px;border-radius:8px}
+.analysis-expanded .first-code-item .small.text-muted{font-size:13px}
+
+/* Theme workspace larger cards */
+.analysis-expanded .theme-grid .card{padding:12px;font-size:15px}
+
+/* Restore button placement */
+.panel-header{padding-right:6px}
+
+/* Inline coding assistant panel rendered below a chunk */
+.inline-assistant{border:1px solid #e6e6e6;background:#fff;padding:10px;border-radius:8px;margin-top:8px;box-shadow:0 4px 12px rgba(0,0,0,0.06)}
+.inline-assistant .suggested-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.inline-assistant .chip{padding:6px 10px;border-radius:14px;border:1px solid rgba(0,0,0,0.06);cursor:pointer;font-size:13px}
+.inline-assistant .chip:hover{box-shadow:0 2px 6px rgba(11,37,64,0.06)}
+.inline-assistant .semantic{font-size:13px;color:#333;margin-bottom:8px}
+.inline-assistant .custom-row{display:flex;gap:8px}
+.inline-assistant .add-btn{white-space:nowrap}
+
+/* visual code number reference for chunk (footnote-like) */
+.chunk-code-refs{float:right;margin-left:8px}
+.chunk-code-refs sup{background:#eee;padding:2px 6px;border-radius:8px;margin-left:4px;font-size:11px}
+
+/* chunk cards layout */
+#chunksContainer{display:flex;flex-direction:column;gap:10px}
+.chunk-card{border:1px solid #e6e6e6;border-radius:6px;background:#fff;padding:10px;border-top:5px solid #e9ecef}
+.chunk-header{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.chunk-meta{display:flex;gap:8px;align-items:center}
+.chunk-body{padding-top:8px;padding-bottom:8px;white-space:pre-wrap}
+.speaker-badge{font-weight:600;padding:6px 8px;border-radius:6px}
+.speaker-interviewer{background:#f2f2f2;color:#333}
+.speaker-participant{background:#ffffff;color:#222}
+.speaker-unknown{background:#f8f9fa;color:#666}
+.cluster-badge{background:#e8f6ff;color:#034a6a; padding:4px 8px;border-radius:12px;font-size:12px}
+.confidence-badge{background:#f0f8ff;color:#14506b;padding:3px 6px;border-radius:8px;font-size:12px}
+.chunk-active{outline:3px solid rgba(13,110,253,0.18)}
+.suggested-codes{display:flex;flex-wrap:wrap;gap:6px}
+.code-pill{padding:4px 8px;border-radius:12px;background:#fbfbff;border:1px solid rgba(0,0,0,0.04);cursor:pointer;font-size:13px;color:#12283a}
+.code-pill:hover{box-shadow:0 2px 6px rgba(11,37,64,0.04)}
+
+/* Right panel sections small spacing */
+#firstCycle, #secondCycle, #memoPanel{min-height:120px}
+
+/* Prominent panel main button to emphasize panel actions */
+.panel-main-btn{
+ 	background: linear-gradient(180deg,#cfe6ff,#a7d2ff);
+ 	color:#07213a;border:none;padding:8px 12px;border-radius:8px;font-weight:700;font-size:14px;box-shadow:0 4px 12px rgba(11,60,110,0.08);cursor:pointer;display:inline-flex;align-items:center;gap:8px
+}
+.panel-main-btn:hover{transform:translateY(-1px);box-shadow:0 8px 16px rgba(11,60,110,0.12)}
+.panel-main-btn .icon{width:18px;height:18px;display:inline-block}
+.panel-secondary-action{background:transparent;border:1px solid rgba(0,0,0,0.06);padding:6px 10px;border-radius:8px;font-size:13px}
+
+
+.highlight{background:rgba(255,249,219,0.45);padding:0 2px;border-radius:2px;color:#12202a}
+.highlight.module-Descriptive{background:rgba(207,232,255,0.55);color:#07263e}
+.highlight.module-Narrative{background:rgba(228,255,228,0.45);color:#0b3a12}
+.highlight.module-Emotion{background:rgba(255,230,230,0.45);color:#3b1219}
+.highlight.module-Process{background:rgba(245,230,255,0.45);color:#38183a}
+
+.popup {position:absolute;background:#fff;border:1px solid #ccc;padding:8px;box-shadow:0 4px 12px rgba(0,0,0,0.12);z-index:9999;min-width:200px}
+.popup input,.popup select,.popup textarea{width:100%;margin:4px 0}
+.popup .row{display:flex;gap:8px}
+.popup .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
+
+/* Inline annotation compact UI */
+.popup.inline-annotation{min-width:220px;padding:6px;border-radius:6px;font-size:13px}
+.inline-anno-wrap{display:flex;flex-direction:column;gap:6px}
+.anno-structure{display:flex;gap:6px;color:#444;font-size:11px}
+.anno-line{background:transparent;padding:2px 6px;border-radius:4px;border:1px dashed rgba(0,0,0,0.06)}
+.tags-row{display:flex;flex-wrap:wrap;gap:6px}
+.code-tag{background:#fbfbfd;border:1px solid rgba(0,0,0,0.06);padding:4px 8px;border-radius:12px;cursor:pointer;font-size:12px;color:#0b2540}
+.code-tag:hover{box-shadow:0 1px 3px rgba(11,37,64,0.04)}
+.semantic-explain{color:#333;font-size:12px;opacity:0.9}
+.custom-row{display:flex}
+.custom-input{flex:1;padding:6px;border:1px solid #ddd;border-radius:12px;font-size:12px}
+.tiny-del{background:transparent;border:none;color:#a33;cursor:pointer;font-size:14px}
+
+/* category-aware colors for tags (use short names) */
+.code-tag.cat-aktor{background:#fcf6e6;border-color:rgba(255,230,160,0.4);color:#5a4a1f}
+.code-tag.cat-tindakan{background:#f0fbf0;border-color:rgba(160,230,160,0.4);color:#1a5830}
+.code-tag.cat-evaluasi{background:#f0f7ff;border-color:rgba(170,200,255,0.4);color:#0b456a}
+.code-tag.cat-modalitas{background:#fff7f0;border-color:rgba(255,220,180,0.4);color:#603c2a}
+.code-tag.cat-kausalitas{background:#fff0f0;border-color:rgba(255,200,200,0.4);color:#5a1a1a}
+
+/* annotation number (superscript) */
+.highlight sup.anno-num{font-size:10px;vertical-align:super;margin-left:4px;color:#555}
+
+/* Category color classes */
+.highlight-yellow{background:rgba(255, 247, 205, 0.6);}
+.highlight-green{background:rgba(220, 255, 220, 0.6);}
+.highlight-blue{background:rgba(220, 240, 255, 0.6);}
+.highlight-orange{background:rgba(255, 235, 210, 0.6);}
+.highlight-cyan{background:rgba(220, 255, 255, 0.6);}
+
+.segment{white-space:pre-wrap}
+
+/* chosen code labels in panels */
+.chosen-code{display:inline-block;padding:2px 8px;border-radius:10px;margin:0 6px;font-size:12px;color:#000}
+.annotation-item button{display:inline-flex;align-items:center;gap:8px}
+
+/* Memo entry styling: lighter background, border, and inline delete button */
+.memo-entry{display:flex;justify-content:space-between;align-items:flex-start;margin:10px;padding:8px;border-radius:6px;border:1px solid #e6eef6;background:#fbfdff}
+.memo-entry.memo-entry-dark{background:#fbfdff;color:#0b1220}
+.memo-content{display:flex;flex-direction:column;gap:6px;flex:1}
+.memo-label{font-weight:600}
+.memo-text{white-space:pre-wrap;color:#0b1220}
+.memo-actions{margin-left:12px;display:flex;align-items:flex-start}
+.memo-delete-btn{font-size:12px;padding:4px 8px;border-radius:6px;background:transparent;border:1px solid #e6e6e6;color:#a33;cursor:pointer}
+.memo-delete-btn:hover{background:#fff0f0}
+
+/* Semantic label in inline assistant */
+.semantic-wrap{margin-bottom:6px}
+.semantic-label{font-weight:600}
+.semantic{font-size:13px;color:#333}
+
+/* First-cycle horizontal map showing codes positioned across document */
+.first-map{position:relative;height:40px;background:#fafafa;border:1px solid #eee;padding:6px;overflow:hidden;font-size:12px}
+.first-map .map-track{position:relative;height:100%;width:100%}
+.first-map .map-item{position:absolute;top:6px;height:28px;border-radius:6px;padding:2px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;color:#000;display:flex;align-items:center}
+
+/* Hide Structure UI by default; reveal via toggle button */
+#docStructureWrap{display:none}
+#toggleDocStructure{display:none}
+
+/* Absolute structure toggle button */
+.structure-toggle-abs{position:absolute;left:12px;top:86px;z-index:11000;border-radius:6px;padding:6px 10px}
+.structure-toggle-abs.close{background:#6c757d}
+
+/* Document viewer (PDF-like) */
+.doc-viewer{display:flex;gap:0;align-items:flex-start}
+.marker-gutter{width:60px;padding:8px;box-sizing:border-box;position:absolute;left:-56px;top:0}
+.doc-viewer-scroll{flex:1 1 auto;overflow-y:auto;max-height:calc(100vh - 120px);padding:16px 16px 16px 120px;display:flex;justify-content:center;align-items:flex-start}
+.doc-page{background:#ffffff;margin:0 auto;padding:36px;box-shadow:0 8px 24px rgba(0,0,0,0.08);max-width:900px;min-width:560px;border-radius:4px;position:relative}
+.doc-page #chunksContainer{box-shadow:none;padding:0;margin:0}
+.doc-page .chunk-card{background:transparent;border:0;padding:0;margin:0 0 12px 0;border-top:5px solid #e9ecef}
+.doc-page .chunk-header{background:transparent;padding:6px 0}
+
+/* ensure the inner doc page with id docPage has explicit white background */
+#docPage{background:#ffffff}
+
+/* Hero-style intro panel (centered, large title + subtitle + email CTA) */
+#introPanel .hero{max-width:920px;margin:0 auto;background:transparent}
+#introPanel .hero-title{font-size:44px;line-height:1.04;margin-bottom:18px;font-weight:700}
+#introPanel .hero-sub{font-size:18px;color:#6b6b6b;max-width:820px;margin:0 auto;margin-bottom:18px}
+#introPanel .hero-email{gap:12px;justify-content:center}
+#introPanel .hero-upload{padding:35px 75px;border-radius:8px;background:#111;color:#fff;border:none;font-weight:700}
+#introPanel .hero-note{color:#8a8a8a;margin-top:18px}
+
+@media (max-width:720px){
+	#introPanel .hero-title{font-size:28px}
+	#introPanel .hero-upload{padding:10px 12px}
+}
+
+/* Hide corpus (document text) on initial page load; reveal after upload */
+#corpus{display:none}
+
+/* Marker pills in gutter */
+.marker-pill{position:absolute;left:8px;padding:6px 8px;border-radius:999px;color:#12283a;font-weight:700;font-size:12px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.06);transition:transform .12s ease, box-shadow .12s ease, opacity .12s}
+.marker-pill.small{padding:4px 6px;font-size:11px}
+.marker-pill.stack{display:block;margin-bottom:6px}
+.marker-pill:hover{transform:translateY(-2px);box-shadow:0 6px 14px rgba(0,0,0,0.12)}
+.marker-pill.pulse{animation:marker-pulse 900ms ease-in-out}
+@keyframes marker-pulse{0%{transform:scale(1)}50%{transform:scale(1.06)}100%{transform:scale(1)}}
+
+/* Highlight connector styles */
+.chunk-active{outline:3px solid rgba(13,110,253,0.12);border-radius:6px}
+.chunk-dim{opacity:0.35}
+
+/* tooltip override for marker hover */
+.marker-tooltip{position:fixed;background:#fff;border:1px solid #e6e6e6;padding:8px;border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,0.12);z-index:12000;min-width:200px}
+
