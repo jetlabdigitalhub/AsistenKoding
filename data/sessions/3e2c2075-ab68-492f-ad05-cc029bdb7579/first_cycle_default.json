@@ -1,0 +1,30 @@
+[
+  {
+    "id": "1",
+    "project_id": "default",
+    "chunk_id": 2,
+    "code_name": "proses perilaku",
+    "code_color": null,
+    "source_type": "manual",
+    "indicator": "",
+    "speaker": "participant",
+    "semantic": "Teks menunjukkan bahwa siswa melakukan tindakan terkait belajar.",
+    "created_at": "2026-07-26T14:50:18.040737",
+    "updated_at": "2026-07-26T14:50:18.040737",
+    "count": 1
+  },
+  {
+    "id": "2",
+    "project_id": "default",
+    "chunk_id": 2,
+    "code_name": "pernyataan eksplanatif",
+    "code_color": null,
+    "source_type": "manual",
+    "indicator": "",
+    "speaker": "participant",
+    "semantic": "Teks menunjukkan bahwa siswa melakukan tindakan terkait belajar.",
+    "created_at": "2026-07-26T14:50:19.343785",
+    "updated_at": "2026-07-26T14:50:19.343785",
+    "count": 1
+  }
+]

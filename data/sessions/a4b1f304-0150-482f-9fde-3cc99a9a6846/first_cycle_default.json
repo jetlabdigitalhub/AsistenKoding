@@ -1,0 +1,16 @@
+[
+  {
+    "id": "1",
+    "project_id": "default",
+    "chunk_id": 2,
+    "code_name": "hubungan konsekuensi",
+    "code_color": null,
+    "source_type": "manual",
+    "indicator": "",
+    "speaker": "participant",
+    "semantic": "Teks menunjukkan bahwa siswa melakukan tindakan terkait belajar.",
+    "created_at": "2026-07-26T14:49:58.548964",
+    "updated_at": "2026-07-26T14:49:58.730710",
+    "count": 2
+  }
+]

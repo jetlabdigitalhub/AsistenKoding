@@ -44,13 +44,18 @@ function fetchWithSession(input, init = {}) {
     return originalFetch(input, init);
   }
 
-  const headers = new Headers(init.headers || {});
+  const request = input instanceof Request ? input : null;
+  const headers = new Headers(request ? request.headers : (init.headers || {}));
   const sessionId = getSessionId();
   if (sessionId) {
     headers.set('X-Session-ID', sessionId);
   }
 
   const updatedInit = Object.assign({}, init, { headers });
+  if (request) {
+    const mergedRequest = new Request(request, updatedInit);
+    return originalFetch(mergedRequest);
+  }
   return originalFetch(input, updatedInit);
 }
 
