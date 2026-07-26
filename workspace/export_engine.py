@@ -20,7 +20,15 @@ class ExportEngine:
             self.storage_dir = Path.home() / 'Downloads'
         self.storage_dir.mkdir(parents=True, exist_ok=True)
 
-    def export_docx(self, doc_id, text, highlights=None, memos=None, module_analyses=None, first_cycle=None, second_cycle=None, codeweaving_items=None, chunks=None, uploaded_filename=None, uploaded_at=None, out_name=None):
+    def _session_export_dir(self, session_id):
+        if session_id:
+            export_dir = self.storage_dir / 'sessions' / session_id / 'exports'
+        else:
+            export_dir = self.storage_dir / 'exports'
+        export_dir.mkdir(parents=True, exist_ok=True)
+        return export_dir
+
+    def export_docx(self, doc_id, text, highlights=None, memos=None, module_analyses=None, first_cycle=None, second_cycle=None, codeweaving_items=None, chunks=None, uploaded_filename=None, uploaded_at=None, out_name=None, session_id=None):
         # determine output filename: prefer explicit out_name, then uploaded_filename, then doc_id
         if out_name:
             out_name_final = out_name
@@ -36,7 +44,7 @@ class ExportEngine:
             else:
                 name_base = 'export'
             out_name_final = f"Coded - {name_base}.{ext}"
-        path = self.storage_dir / out_name_final
+        path = self._session_export_dir(session_id) / out_name_final
         doc = Document()
 
         
@@ -193,7 +201,7 @@ class ExportEngine:
         doc.save(str(path))
         return str(path)
 
-    def export_pdf(self, doc_id, text, highlights=None, memos=None, module_analyses=None, first_cycle=None, second_cycle=None, codeweaving_items=None, chunks=None, uploaded_filename=None, uploaded_at=None, out_name=None):
+    def export_pdf(self, doc_id, text, highlights=None, memos=None, module_analyses=None, first_cycle=None, second_cycle=None, codeweaving_items=None, chunks=None, uploaded_filename=None, uploaded_at=None, out_name=None, session_id=None):
         # determine output filename: prefer explicit out_name, then uploaded_filename, then doc_id
         if out_name:
             out_name_final = out_name
@@ -206,7 +214,7 @@ class ExportEngine:
             else:
                 name_base = 'export'
             out_name_final = f"Coded - {name_base}.{ext}"
-        path = self.storage_dir / out_name_final
+        path = self._session_export_dir(session_id) / out_name_final
         doc = SimpleDocTemplate(str(path), pagesize=letter, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=72)
         styles = getSampleStyleSheet()
         # paragraph styles for wrapping table cells

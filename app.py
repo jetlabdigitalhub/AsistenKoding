@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, jsonify, send_from_directory, render_template_string
+from flask import Flask, request, jsonify, send_from_directory, render_template_string, g
 from workspace.highlight_engine import HighlightEngine
 from workspace.memo_engine import MemoEngine
 from workspace.export_engine import ExportEngine
@@ -8,6 +8,7 @@ from workspace.semantic_annotation import detect_indicators, suggest_codes, gene
 from coding_engine.pipeline import process_transcript as pipeline_process
 from backend.codeweaving import generate as generate_codeweaving
 from backend.evidence_matcher import find_supporting_chunks, find_disconfirming_chunks
+from backend.session import get_session_id
 import io
 from docx import Document as DocxDocument
 import json
@@ -27,8 +28,22 @@ exporter = ExportEngine()
 semantic = SemanticEngine(modules_dir=os.path.join(BASE_DIR, "modules"))
 
 
+@app.before_request
+def require_session_for_api():
+    if request.path.startswith('/api/'):
+        session_id = get_session_id()
+        if not session_id:
+            return jsonify({'error': 'Missing or invalid X-Session-ID header'}), 400
+        g.session_id = session_id
+
+
 def _data_file(kind, doc_id='default'):
-    return Path(os.path.join(BASE_DIR, 'data')) / f"{kind}_{doc_id}.json"
+    session_id = getattr(g, 'session_id', None)
+    if not session_id:
+        raise RuntimeError('session_id not available for data persistence')
+    session_dir = Path(os.path.join(BASE_DIR, 'data', 'sessions', session_id))
+    session_dir.mkdir(parents=True, exist_ok=True)
+    return session_dir / f"{kind}_{doc_id}.json"
 
 
 def _read_json(kind, doc_id='default'):
@@ -84,8 +99,10 @@ def pipeline_api():
 def add_highlight():
     data = request.json or {}
     doc_id = data.get('doc_id', 'default')
+    session_id = g.session_id
     # create highlight first
     h = highlight.save_highlight(
+        session_id,
         doc_id,
         data.get('start'),
         data.get('end'),
@@ -106,7 +123,7 @@ def add_highlight():
             if data.get('color'):
                 allowed['color'] = data.get('color')
             if allowed:
-                h = highlight.update_highlight(doc_id, h['id'], **allowed)
+                h = highlight.update_highlight(session_id, doc_id, h['id'], **allowed)
         else:
             indicators = detect_indicators(h.get('text',''))
             suggestions = suggest_codes(indicators)
@@ -114,7 +131,7 @@ def add_highlight():
             # extract ranked codes (strings)
             ranked = [s['code'] for s in suggestions]
             # update highlight with codes and semantic relationship
-            h = highlight.update_highlight(doc_id, h['id'], codes=ranked, semantic_relationship=semantic_rel)
+            h = highlight.update_highlight(session_id, doc_id, h['id'], codes=ranked, semantic_relationship=semantic_rel)
     except Exception:
         pass
     return jsonify(h)
@@ -124,8 +141,9 @@ def add_highlight():
 def edit_highlight(hid):
     data = request.json or {}
     doc_id = data.get('doc_id', 'default')
+    session_id = g.session_id
     allowed = {k: v for k, v in data.items() if k in ['text','start','end','code','cycle','memo','module','category','semantic','color','codes','semantic_relationship']}
-    h = highlight.update_highlight(doc_id, hid, **allowed)
+    h = highlight.update_highlight(session_id, doc_id, hid, **allowed)
     if not h:
         return jsonify({"error":"not found"}), 404
     return jsonify(h)
@@ -134,21 +152,24 @@ def edit_highlight(hid):
 @app.route('/api/highlight/<hid>', methods=['DELETE'])
 def remove_highlight(hid):
     doc_id = request.args.get('doc_id', 'default')
-    ok = highlight.delete_highlight(doc_id, hid)
+    session_id = g.session_id
+    ok = highlight.delete_highlight(session_id, doc_id, hid)
     return jsonify({"deleted": ok})
 
 
 @app.route('/api/highlights')
 def get_highlights():
     doc_id = request.args.get('doc_id', 'default')
-    return jsonify(highlight.list_highlights(doc_id))
+    session_id = g.session_id
+    return jsonify(highlight.list_highlights(session_id, doc_id))
 
 
 @app.route('/api/clear_highlights', methods=['POST'])
 def clear_highlights():
     data = request.json or {}
     doc_id = data.get('doc_id', 'default')
-    highlight.clear_highlights(doc_id)
+    session_id = g.session_id
+    highlight.clear_highlights(session_id, doc_id)
     return jsonify({"cleared": True})
 
 
@@ -156,14 +177,16 @@ def clear_highlights():
 def add_memo():
     data = request.json or {}
     doc_id = data.get('doc_id', 'default')
-    entry = memo.add_memo(doc_id, data.get('author', 'anon'), data.get('text', ''))
+    session_id = g.session_id
+    entry = memo.add_memo(session_id, doc_id, data.get('author', 'anon'), data.get('text', ''))
     return jsonify(entry)
 
 
 @app.route('/api/memos')
 def list_memos():
     doc_id = request.args.get('doc_id', 'default')
-    return jsonify(memo.list_memos(doc_id))
+    session_id = g.session_id
+    return jsonify(memo.list_memos(session_id, doc_id))
 
 
 @app.route('/api/upload_docx', methods=['POST'])
@@ -276,9 +299,10 @@ def summarize_api():
 def do_export():
     data = request.json or {}
     doc_id = data.get('doc_id', 'default')
+    session_id = g.session_id
     text = data.get('text', '')
-    highlights = highlight.list_highlights(doc_id)
-    memos = memo.list_memos(doc_id)
+    highlights = highlight.list_highlights(session_id, doc_id)
+    memos = memo.list_memos(session_id, doc_id)
     # load first_cycle, second_cycle, rich memos
     first_cycle = _read_json('first_cycle', doc_id)
     second_cycle = _read_json('second_cycle', doc_id)
@@ -321,6 +345,7 @@ def do_export():
     except Exception:
         merged_memos = memos or []
 
+    session_id = g.session_id
     if fmt == 'pdf':
         # if upload metadata not provided in request, try stored upload_info
         if not uploaded_filename or not uploaded_at:
@@ -334,7 +359,7 @@ def do_export():
             except Exception:
                 pass
         try:
-            path = exporter.export_pdf(doc_id, text, highlights=highlights, memos=merged_memos, module_analyses=module_analyses, first_cycle=first_cycle, second_cycle=second_cycle, codeweaving_items=codeweaving_items, chunks=chunks_for_export, uploaded_filename=uploaded_filename, uploaded_at=uploaded_at)
+            path = exporter.export_pdf(doc_id, text, highlights=highlights, memos=merged_memos, module_analyses=module_analyses, first_cycle=first_cycle, second_cycle=second_cycle, codeweaving_items=codeweaving_items, chunks=chunks_for_export, uploaded_filename=uploaded_filename, uploaded_at=uploaded_at, session_id=session_id)
         except Exception as e:
             print('[Export] PDF export error:', e)
             return jsonify({'error': str(e)}), 500
@@ -350,7 +375,7 @@ def do_export():
             except Exception:
                 pass
         try:
-            path = exporter.export_docx(doc_id, text, highlights=highlights, memos=merged_memos, module_analyses=module_analyses, first_cycle=first_cycle, second_cycle=second_cycle, codeweaving_items=codeweaving_items, chunks=chunks_for_export, uploaded_filename=uploaded_filename, uploaded_at=uploaded_at)
+            path = exporter.export_docx(doc_id, text, highlights=highlights, memos=merged_memos, module_analyses=module_analyses, first_cycle=first_cycle, second_cycle=second_cycle, codeweaving_items=codeweaving_items, chunks=chunks_for_export, uploaded_filename=uploaded_filename, uploaded_at=uploaded_at, session_id=session_id)
         except Exception as e:
             print('[Export] DOCX export error:', e)
             return jsonify({'error': str(e)}), 500
@@ -478,13 +503,14 @@ def merge_first_cycle():
 @app.route('/api/codeweaving/generate', methods=['POST'])
 def api_generate_codeweaving():
     data = request.json or {}
+    session_id = g.session_id
     doc_id = data.get('doc_id', 'default')
     selected = data.get('selected_codes') or []
     mode = data.get('mode', 'auto')
     # run deterministic codeweaving
     try:
         assertion = generate_codeweaving(selected, mode=mode)
-        highlights = highlight.list_highlights(doc_id)
+        highlights = highlight.list_highlights(session_id, doc_id)
         supporting = find_supporting_chunks(assertion.get('codes_used', []), highlights)
         disconfirm = find_disconfirming_chunks(assertion, highlights)
         return jsonify({'assertion': assertion, 'supporting': supporting, 'disconfirming': disconfirm})

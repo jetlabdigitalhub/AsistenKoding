@@ -8,11 +8,16 @@ class MemoEngine:
         self.storage_dir = Path(storage_dir)
         self.storage_dir.mkdir(parents=True, exist_ok=True)
 
-    def _file_for(self, doc_id):
-        return self.storage_dir / f"memos_{doc_id}.json"
+    def _session_dir(self, session_id):
+        session_dir = self.storage_dir / 'sessions' / session_id
+        session_dir.mkdir(parents=True, exist_ok=True)
+        return session_dir
 
-    def add_memo(self, doc_id, author, text):
-        path = self._file_for(doc_id)
+    def _file_for(self, session_id, doc_id):
+        return self._session_dir(session_id) / f"memos_{doc_id}.json"
+
+    def add_memo(self, session_id, doc_id, author, text):
+        path = self._file_for(session_id, doc_id)
         items = []
         if path.exists():
             items = json.loads(path.read_text(encoding='utf-8'))
@@ -21,8 +26,8 @@ class MemoEngine:
         path.write_text(json.dumps(items, ensure_ascii=False, indent=2), encoding='utf-8')
         return entry
 
-    def list_memos(self, doc_id):
-        path = self._file_for(doc_id)
+    def list_memos(self, session_id, doc_id):
+        path = self._file_for(session_id, doc_id)
         if not path.exists():
             return []
         return json.loads(path.read_text(encoding='utf-8'))

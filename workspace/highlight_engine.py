@@ -9,11 +9,16 @@ class HighlightEngine:
         self.storage_dir = Path(storage_dir)
         self.storage_dir.mkdir(parents=True, exist_ok=True)
 
-    def _file_for(self, doc_id):
-        return self.storage_dir / f"highlights_{doc_id}.json"
+    def _session_dir(self, session_id):
+        session_dir = self.storage_dir / 'sessions' / session_id
+        session_dir.mkdir(parents=True, exist_ok=True)
+        return session_dir
 
-    def save_highlight(self, doc_id, start, end, text, label, module, **kwargs):
-        path = self._file_for(doc_id)
+    def _file_for(self, session_id, doc_id):
+        return self._session_dir(session_id) / f"highlights_{doc_id}.json"
+
+    def save_highlight(self, session_id, doc_id, start, end, text, label, module, **kwargs):
+        path = self._file_for(session_id, doc_id)
         items = []
         if path.exists():
             items = json.loads(path.read_text(encoding='utf-8'))
@@ -35,8 +40,8 @@ class HighlightEngine:
         path.write_text(json.dumps(items, ensure_ascii=False, indent=2), encoding='utf-8')
         return entry
 
-    def update_highlight(self, doc_id, highlight_id, **kwargs):
-        path = self._file_for(doc_id)
+    def update_highlight(self, session_id, doc_id, highlight_id, **kwargs):
+        path = self._file_for(session_id, doc_id)
         if not path.exists():
             return None
         items = json.loads(path.read_text(encoding='utf-8'))
@@ -47,8 +52,8 @@ class HighlightEngine:
                 return it
         return None
 
-    def get_highlight(self, doc_id, highlight_id):
-        path = self._file_for(doc_id)
+    def get_highlight(self, session_id, doc_id, highlight_id):
+        path = self._file_for(session_id, doc_id)
         if not path.exists():
             return None
         items = json.loads(path.read_text(encoding='utf-8'))
@@ -57,8 +62,8 @@ class HighlightEngine:
                 return it
         return None
 
-    def delete_highlight(self, doc_id, highlight_id):
-        path = self._file_for(doc_id)
+    def delete_highlight(self, session_id, doc_id, highlight_id):
+        path = self._file_for(session_id, doc_id)
         if not path.exists():
             return False
         items = json.loads(path.read_text(encoding='utf-8'))
@@ -66,14 +71,14 @@ class HighlightEngine:
         path.write_text(json.dumps(new, ensure_ascii=False, indent=2), encoding='utf-8')
         return True
 
-    def list_highlights(self, doc_id):
-        path = self._file_for(doc_id)
+    def list_highlights(self, session_id, doc_id):
+        path = self._file_for(session_id, doc_id)
         if not path.exists():
             return []
         return json.loads(path.read_text(encoding='utf-8'))
 
-    def clear_highlights(self, doc_id):
-        path = self._file_for(doc_id)
+    def clear_highlights(self, session_id, doc_id):
+        path = self._file_for(session_id, doc_id)
         if path.exists():
             path.unlink()
         return []

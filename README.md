@@ -1,6 +1,6 @@
-Asisten Koding
--
-Serve as a product of Research and Development (RnD) in Litapdimas Research of State Islamic Institute of Curup, Bengkulu, Indonesia. This project demonstrates a  qualitative coding workspace with linguistics model embedded. 
+# Qualitative Coding Workspace (Modular)
+
+This project demonstrates a modular qualitative coding workspace with one reusable engine and multiple coding modules.
 
 Run:
 
