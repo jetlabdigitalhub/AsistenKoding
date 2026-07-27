@@ -33,8 +33,13 @@ def require_session_for_api():
     if request.path.startswith('/api/'):
         session_id = get_session_id()
         if not session_id:
+            print(f"[Session] Missing X-Session-ID from {request.remote_addr} for {request.path}")
             return jsonify({'error': 'Missing or invalid X-Session-ID header'}), 400
         g.session_id = session_id
+        try:
+            print(f"[Session] {request.remote_addr} -> {g.session_id} {request.path}")
+        except Exception:
+            pass
 
 
 def _data_file(kind, doc_id='default'):
