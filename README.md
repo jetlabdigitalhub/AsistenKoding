@@ -1,4 +1,4 @@
-Asisten koding v.1.7 b.003 d4
+Asisten koding v.1.7 b.004
 
 This project demonstrates a modular qualitative coding workspace with one reusable engine and multiple coding modules.
 

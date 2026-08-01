@@ -1250,10 +1250,32 @@ const exportDocxBtn = document.getElementById('exportDocx'); if(exportDocxBtn){ 
 const exportPdfBtn = document.getElementById('exportPdf'); if(exportPdfBtn){ exportPdfBtn.onclick = async ()=>{
   try{
     const res = await fetch(API.export, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({doc_id:'default', text:corpusText, format:'pdf'})});
-    const j = await safeJson(res);
-    if(res.ok && j.path){ showToast('Export berhasil: ' + j.path, 'success'); }
-    else { showToast('Export gagal', 'error'); }
-  }catch(e){ showToast('Export error', 'error'); }
+    if(!res.ok){
+      const err = await safeJson(res);
+      console.error('PDF export failed', err);
+      showToast('Export gagal', 'error');
+      return;
+    }
+    const blob = await res.blob();
+    const disposition = res.headers.get('Content-Disposition') || '';
+    let filename = 'export.pdf';
+    const match = disposition.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
+    if(match && match[1]){
+      filename = decodeURIComponent(match[1]);
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showToast('PDF berhasil diunduh', 'success');
+  }catch(e){
+    console.error('PDF export error', e);
+    showToast('Export error', 'error');
+  }
 }; }
 
 // search input/button removed from UI; search handler intentionally disabled

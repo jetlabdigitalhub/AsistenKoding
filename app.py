@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, jsonify, send_from_directory, render_template_string, g
+from flask import Flask, request, jsonify, send_file, send_from_directory, render_template_string, g
 from workspace.highlight_engine import HighlightEngine
 from workspace.memo_engine import MemoEngine
 from workspace.export_engine import ExportEngine
@@ -368,6 +368,9 @@ def do_export():
         except Exception as e:
             print('[Export] PDF export error:', e)
             return jsonify({'error': str(e)}), 500
+        # return the generated PDF file directly to the browser for download
+        filename = os.path.basename(path)
+        return send_file(path, mimetype='application/pdf', as_attachment=True, download_name=filename)
     else:
         if not uploaded_filename or not uploaded_at:
             try:
