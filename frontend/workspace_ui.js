@@ -201,6 +201,7 @@ function hideAnalysisPanels(){
     const paneMentor = document.getElementById('pane-mentor'); if(paneMentor) paneMentor.style.display = 'none';
     const paneFirst = document.getElementById('pane-first'); if(paneFirst) paneFirst.style.display = 'none';
     const paneSecond = document.getElementById('pane-second'); if(paneSecond) paneSecond.style.display = 'none';
+    const rightPanel = document.getElementById('rightPanel'); if(rightPanel) rightPanel.style.display = 'none';
     try{ document.body.classList.add('no-right'); }catch(e){}
   }catch(e){}
 }
@@ -212,12 +213,241 @@ function showAnalysisPanels(){
     const paneMentor = document.getElementById('pane-mentor'); if(paneMentor) paneMentor.style.display = '';
     const paneFirst = document.getElementById('pane-first'); if(paneFirst) paneFirst.style.display = '';
     const paneSecond = document.getElementById('pane-second'); if(paneSecond) paneSecond.style.display = '';
+    const rightPanel = document.getElementById('rightPanel'); if(rightPanel) rightPanel.style.display = '';
     try{ document.body.classList.remove('no-right'); }catch(e){}
   }catch(e){}
 }
 
 // hide by default until upload
 hideAnalysisPanels();
+
+const GUIDE_STEPS = [
+  {
+    selector: '#heroUploadBtn',
+    title: 'Unggah Dokumen',
+    description: 'Mulailah dengan mengunggah dokumen penelitian yang akan dianalisis. Sistem akan mengekstrak isi dokumen sebelum proses koding dilakukan.'
+  },
+  {
+    selector: '#docViewerScroll',
+    title: 'Transkrip Penelitian',
+    description: 'Seluruh isi dokumen akan ditampilkan di area ini. Anda dapat membaca, menyeleksi, dan melakukan proses koding pada setiap kutipan.'
+  },
+  {
+    selector: '#tab-first',
+    title: 'First Cycle Coding',
+    description: 'Tahap ini digunakan untuk membuat kode awal berdasarkan makna setiap kutipan. Anda dapat menambah, mengubah, atau menghapus kode sesuai kebutuhan.',
+    placement: 'left-screen'
+  },
+  {
+    selector: '#tab-second',
+    title: 'Second Cycle Coding',
+    description: 'Gabungkan beberapa kode awal menjadi kategori atau tema yang lebih luas agar analisis lebih terstruktur.',
+    placement: 'left-screen'
+  },
+  {
+    selector: '#pane-mentor',
+    title: 'Riwayat Analisis',
+    description: 'Semua proses analisis AI akan tersimpan di sini sehingga dapat ditinjau kembali.',
+    placement: 'left-screen'
+  },
+  {
+    selector: '#exportDocx',
+    title: 'Export Hasil',
+    description: 'Setelah analisis selesai, ekspor hasil ke PDF atau Word untuk dokumentasi maupun pelaporan penelitian.',
+    placement: 'left-screen'
+  },
+  {
+    selector: '#mainPanel',
+    title: 'Selesai',
+    description: 'Anda telah mengenal seluruh fitur utama Asisten Koding. Sekarang Anda dapat mulai melakukan analisis data kualitatif.',
+    placement: 'left-screen'
+  }
+];
+
+const GUIDE_STORAGE_KEY = 'asistenKodingGuideAutoSkip';
+const GUIDE_AUTO_SHOWN_KEY = 'asistenKodingGuideAutoShown';
+let guideState = { current: 0, active: false, manualOpen: false };
+
+function resetGuideHighlight(){
+  document.querySelectorAll('.guide-target-highlight').forEach(el => el.classList.remove('guide-target-highlight'));
+}
+
+function setGuideTargetHighlight(selector){
+  resetGuideHighlight();
+  const target = document.querySelector(selector);
+  if(!target) return null;
+  target.classList.add('guide-target-highlight');
+  return target;
+}
+
+function getGuidePosition(target, placement = 'right'){
+  if(!target) return { left: 24, top: 24 };
+  const rect = target.getBoundingClientRect();
+  const card = document.getElementById('guideCard');
+  const cardWidth = card ? card.offsetWidth : 320;
+  const cardHeight = card ? card.offsetHeight : 280;
+  const gap = 18;
+  const top = Math.min(window.innerHeight - cardHeight - 16, Math.max(16, rect.top + (rect.height / 2) - (cardHeight / 2)));
+
+  if(placement === 'left-screen'){
+    const left = Math.max(16, Math.min(360, Math.round(window.innerWidth * 0.18)));
+    return { left, top };
+  }
+
+  if(placement === 'left'){
+    const left = Math.max(16, rect.left - cardWidth - gap - 120);
+    return { left, top };
+  }
+
+  const left = Math.min(window.innerWidth - cardWidth - 16, Math.max(16, rect.right + gap));
+  return { left, top };
+}
+
+function prepareGuideTarget(stepIndex){
+  const step = GUIDE_STEPS[stepIndex];
+  if(!step) return;
+  const target = setGuideTargetHighlight(step.selector);
+
+  if(step.selector === '#tab-first' || step.selector === '#tab-second' || step.selector === '#pane-mentor'){
+    showAnalysisPanels();
+    if(step.selector === '#tab-first'){
+      const tab = document.getElementById('tab-first'); if(tab) tab.click();
+    }
+    if(step.selector === '#tab-second'){
+      const tab = document.getElementById('tab-second'); if(tab) tab.click();
+    }
+    if(step.selector === '#pane-mentor'){
+      const tab = document.getElementById('tab-mentor'); if(tab) tab.click();
+    }
+  }
+  if(step.selector === '#mainPanel'){
+    hideAnalysisPanels();
+  }
+  if(target){
+    const pos = getGuidePosition(target, step.placement || 'right');
+    const card = document.getElementById('guideCard');
+    if(card){
+      card.style.left = pos.left + 'px';
+      card.style.top = pos.top + 'px';
+    }
+  }
+}
+
+function renderGuideStep(){
+  const step = GUIDE_STEPS[guideState.current];
+  if(!step) return;
+  const overlay = document.getElementById('interactiveGuideOverlay');
+  const stepBadge = document.getElementById('guideStepBadge');
+  const title = document.getElementById('guideCardTitle');
+  const description = document.getElementById('guideCardDescription');
+  const prevBtn = document.getElementById('guidePrevBtn');
+  const nextBtn = document.getElementById('guideNextBtn');
+  const finishBtn = document.getElementById('guideFinishBtn');
+  const checkbox = document.getElementById('guideNeverShowAgain');
+
+  if(checkbox){ checkbox.checked = localStorage.getItem(GUIDE_STORAGE_KEY) === '1'; }
+  if(stepBadge) stepBadge.textContent = `${guideState.current + 1} dari ${GUIDE_STEPS.length}`;
+  if(title) title.textContent = step.title;
+  if(description) description.textContent = step.description;
+
+  if(prevBtn) prevBtn.disabled = guideState.current === 0;
+  if(nextBtn) nextBtn.style.display = guideState.current === GUIDE_STEPS.length - 1 ? 'none' : '';
+  if(finishBtn) finishBtn.style.display = guideState.current === GUIDE_STEPS.length - 1 ? '' : 'none';
+
+  if(overlay) overlay.setAttribute('aria-hidden', 'false');
+  prepareGuideTarget(guideState.current);
+}
+
+function openGuideOverlay(manual = false){
+  guideState.current = 0;
+  guideState.manualOpen = manual;
+  guideState.active = true;
+  hideAnalysisPanels();
+  const overlay = document.getElementById('interactiveGuideOverlay');
+  if(overlay){
+    overlay.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+  renderGuideStep();
+}
+
+function closeGuideOverlay(isSkip = false){
+  guideState.active = false;
+  const overlay = document.getElementById('interactiveGuideOverlay');
+  if(overlay){ overlay.classList.remove('show'); overlay.setAttribute('aria-hidden', 'true'); }
+  resetGuideHighlight();
+  hideAnalysisPanels();
+  document.body.style.overflow = '';
+  if(isSkip && !guideState.manualOpen){
+    localStorage.setItem(GUIDE_STORAGE_KEY, '1');
+    localStorage.setItem(GUIDE_AUTO_SHOWN_KEY, '1');
+  }
+  if(!guideState.manualOpen){
+    localStorage.setItem(GUIDE_AUTO_SHOWN_KEY, '1');
+  }
+}
+
+function handleGuideNext(){
+  if(guideState.current < GUIDE_STEPS.length - 1){
+    guideState.current += 1;
+    renderGuideStep();
+  }
+}
+
+function handleGuidePrev(){
+  if(guideState.current > 0){
+    guideState.current -= 1;
+    renderGuideStep();
+  }
+}
+
+function handleGuideFinish(){
+  const checkbox = document.getElementById('guideNeverShowAgain');
+  if(checkbox && checkbox.checked){
+    localStorage.setItem(GUIDE_STORAGE_KEY, '1');
+  }
+  closeGuideOverlay(false);
+}
+
+function attachGuideControls(){
+  const guideBtn = document.getElementById('guideBtn');
+  const overlay = document.getElementById('interactiveGuideOverlay');
+  const closeBtn = document.getElementById('guideCloseBtn');
+  const prevBtn = document.getElementById('guidePrevBtn');
+  const nextBtn = document.getElementById('guideNextBtn');
+  const skipBtn = document.getElementById('guideSkipBtn');
+  const finishBtn = document.getElementById('guideFinishBtn');
+  const checkbox = document.getElementById('guideNeverShowAgain');
+
+  if(guideBtn){ guideBtn.addEventListener('click', ()=> openGuideOverlay(true)); }
+  if(closeBtn){ closeBtn.addEventListener('click', ()=> closeGuideOverlay(false)); }
+  if(prevBtn){ prevBtn.addEventListener('click', handleGuidePrev); }
+  if(nextBtn){ nextBtn.addEventListener('click', handleGuideNext); }
+  if(finishBtn){ finishBtn.addEventListener('click', handleGuideFinish); }
+  if(skipBtn){ skipBtn.addEventListener('click', ()=> closeGuideOverlay(true)); }
+  if(checkbox){ checkbox.addEventListener('change', ()=>{ if(checkbox.checked) localStorage.setItem(GUIDE_STORAGE_KEY, '1'); }); }
+  if(overlay){ overlay.addEventListener('click', (ev)=>{ if(ev.target === overlay) closeGuideOverlay(false); }); }
+  window.addEventListener('resize', ()=>{ if(guideState.active) renderGuideStep(); });
+}
+
+function autoShowGuideOnce(){
+  const autoSkip = localStorage.getItem(GUIDE_STORAGE_KEY);
+  const autoShown = localStorage.getItem(GUIDE_AUTO_SHOWN_KEY);
+  if(autoSkip === '1' || autoShown === '1') return;
+  setTimeout(()=>{
+    if(!guideState.active){
+      openGuideOverlay(false);
+      localStorage.setItem(GUIDE_AUTO_SHOWN_KEY, '1');
+    }
+  }, 400);
+}
+
+attachGuideControls();
+if(document.readyState === 'complete' || document.readyState === 'interactive'){
+  autoShowGuideOnce();
+} else {
+  document.addEventListener('DOMContentLoaded', autoShowGuideOnce);
+}
 
 // New: analyze transcript via backend and render UI components
 async function analyzeAndRender(text){
@@ -1242,10 +1472,32 @@ if(speakerFilterEl){ speakerFilterEl.addEventListener('click', (ev)=>{
 const exportDocxBtn = document.getElementById('exportDocx'); if(exportDocxBtn){ exportDocxBtn.onclick = async ()=>{
   try{
     const res = await fetch(API.export, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({doc_id:'default', text:corpusText, format:'docx'})});
-    const j = await safeJson(res);
-    if(res.ok && j.path){ showToast('Export berhasil: ' + j.path, 'success'); }
-    else { showToast('Export gagal', 'error'); }
-  }catch(e){ showToast('Export error', 'error'); }
+    if(!res.ok){
+      const err = await safeJson(res);
+      console.error('DOCX export failed', err);
+      showToast('Export gagal', 'error');
+      return;
+    }
+    const blob = await res.blob();
+    const disposition = res.headers.get('Content-Disposition') || '';
+    let filename = 'export.docx';
+    const match = disposition.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
+    if(match && match[1]){
+      filename = decodeURIComponent(match[1]);
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showToast('Word berhasil diunduh', 'success');
+  }catch(e){
+    console.error('DOCX export error', e);
+    showToast('Export error', 'error');
+  }
 }; }
 const exportPdfBtn = document.getElementById('exportPdf'); if(exportPdfBtn){ exportPdfBtn.onclick = async ()=>{
   try{

@@ -371,23 +371,25 @@ def do_export():
         # return the generated PDF file directly to the browser for download
         filename = os.path.basename(path)
         return send_file(path, mimetype='application/pdf', as_attachment=True, download_name=filename)
-    else:
-        if not uploaded_filename or not uploaded_at:
-            try:
-                info = _read_json('upload_info', doc_id)
-                if isinstance(info, dict):
-                    if not uploaded_filename:
-                        uploaded_filename = info.get('filename')
-                    if not uploaded_at:
-                        uploaded_at = info.get('uploaded_at')
-            except Exception:
-                pass
+
+    if not uploaded_filename or not uploaded_at:
         try:
-            path = exporter.export_docx(doc_id, text, highlights=highlights, memos=merged_memos, module_analyses=module_analyses, first_cycle=first_cycle, second_cycle=second_cycle, codeweaving_items=codeweaving_items, chunks=chunks_for_export, uploaded_filename=uploaded_filename, uploaded_at=uploaded_at, session_id=session_id)
-        except Exception as e:
-            print('[Export] DOCX export error:', e)
-            return jsonify({'error': str(e)}), 500
-    return jsonify({"path": path})
+            info = _read_json('upload_info', doc_id)
+            if isinstance(info, dict):
+                if not uploaded_filename:
+                    uploaded_filename = info.get('filename')
+                if not uploaded_at:
+                    uploaded_at = info.get('uploaded_at')
+        except Exception:
+            pass
+    try:
+        path = exporter.export_docx(doc_id, text, highlights=highlights, memos=merged_memos, module_analyses=module_analyses, first_cycle=first_cycle, second_cycle=second_cycle, codeweaving_items=codeweaving_items, chunks=chunks_for_export, uploaded_filename=uploaded_filename, uploaded_at=uploaded_at, session_id=session_id)
+    except Exception as e:
+        print('[Export] DOCX export error:', e)
+        return jsonify({'error': str(e)}), 500
+
+    filename = os.path.basename(path)
+    return send_file(path, mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document', as_attachment=True, download_name=filename)
 
 
 @app.route('/api/first_cycle', methods=['GET'])
