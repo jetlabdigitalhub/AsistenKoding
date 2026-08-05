@@ -1,6 +1,6 @@
 Asisten koding v.1.7 b.004
 
-This project demonstrates a modular qualitative coding workspace with one reusable engine and multiple coding modules.
+This project are researched and developed as part of LITAPDIMAS Research which demonstrates a modular qualitative coding workspace with one reusable engine and multiple coding modules.
 
 Run:
 
